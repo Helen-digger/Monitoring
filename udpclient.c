@@ -95,12 +95,7 @@ int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 		fprintf(stderr, "'%s': recvfrom() failed!\n", __func__);
 		return -1;
 	}
-	/*DOTO проверить отправителя и сообщение*/
-	/*if (sk->AnsAddr.sin_addr.s_addr != inet_addr(sk->IP))
-	{
-		fprintf(stderr,"'%s': received a packet from unknown source.\n", __func__);
-		return -1;
-	}*/
+	
 
 	return 0;
 }
