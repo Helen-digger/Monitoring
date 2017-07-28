@@ -10,12 +10,12 @@ int get_srv_ip(sk_t * sk)
 {
 	//printf("%s\n", __func__);
 	sk_t sk_bcast;
-	SK_INIT(sk_bcast, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET, htonl(INADDR_ANY), BCAST_PORT);
+	SK_INIT(sk_bcast, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
 
 	//for (;;)
 	//{
 		//if (0 > (
-		sk_bcast.rcv_size = recvfrom(sk_bcast.sock,
+		sk_bcast.rcv_size = recvfrom(sk_bcast.s_in,
 		                                      (void *) sk->IP,
 		                                      sizeof(sk->IP),
 		                                      0, NULL, 0);//))
@@ -28,7 +28,7 @@ int get_srv_ip(sk_t * sk)
 		//sleep(1);
 	//}
 
-	close(sk_bcast.sock);
+	close(sk_bcast.s_out);
 
 	return 0;
 }
@@ -61,41 +61,47 @@ int client_build_msg(PC_stat * cl_stat)
 		fprintf(stderr,"'%s': Mac() failed!\n", __func__);
 		return -1;
 	}
+	if (0!=Time(&cl_stat->time))
+            {
+		fprintf(stderr,"'%s': Time() failed!\n", __func__);
+		return -1;
+	}
 	return 0;
 }
 
 int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 {
 	printf("%s 0\n", __func__);
-	if ( sizeof(PC_stat) != sendto(sk->sock,
+	if ( sizeof(PC_stat) != sendto(sk->s_in,
 	                               (void*)cl_stat,
 	                               sizeof(PC_stat),
 	                               0,
-	                               (struct sockaddr *) &sk->SrvAddr,
-	                               sizeof(sk->SrvAddr)))
+	                               (struct sockaddr *) &sk->RemoteAddr,
+	                               sizeof(sk->RemoteAddr)))
 	{
-		fprintf(stderr, "'%s': sendto() failed!\n", __func__);
+		//fprintf(stderr, "'%s': sendto() failed!\n", __func__);
+		printf("%s 1: ", __func__); perror("sendto() failed");
 		return -1;
 	}
-	printf("%s 1\n", __func__);
-	unsigned int sk_size = sizeof(sk->ClntAddr);
-	if ( sizeof(server_ans) !=  (recvfrom(sk->sock,
+
+	unsigned int sk_size = sizeof(sk->AnsAddr);
+	if ( sizeof(server_ans) !=  (recvfrom(sk->s_in,
 	                                      ((void*)ans),
 	                                      sizeof(server_ans),
 	                                      0,
-	                                      (struct sockaddr *) &sk->ClntAddr,
+	                                      (struct sockaddr *) &sk->AnsAddr,
 	                                      &sk_size)))
 	{
 		fprintf(stderr, "'%s': recvfrom() failed!\n", __func__);
 		return -1;
 	}
-	printf("%s 2\n", __func__);
-	if (sk->SrvAddr.sin_addr.s_addr != inet_addr(sk->IP))
+	/*DOTO проверить отправителя и сообщение*/
+	/*if (sk->AnsAddr.sin_addr.s_addr != inet_addr(sk->IP))
 	{
 		fprintf(stderr,"'%s': received a packet from unknown source.\n", __func__);
 		return -1;
-	}
-	printf("%s return\n", __func__);
+	}*/
+
 	return 0;
 }
 
@@ -115,8 +121,10 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "'%s': get_srv_ip() failed!\n", __func__);
 		return -1;
 	}
-	
-	SK_INIT(sk, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET, inet_addr(sk.IP), CLIENT_PORT);
+
+	SK_INIT(sk, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET,
+	        htonl(INADDR_ANY), inet_addr(sk.IP), CLIENT_PORT, SERVER_PORT);
+
 	for(;;)
 	{
 		if (!tbf_rl(&snd_rl)) continue;
@@ -133,7 +141,9 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
-	close(sk.sock);
+
+	close(sk.s_in);
+	close(sk.s_out);
 
 	return (0);
 }

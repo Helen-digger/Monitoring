@@ -2,45 +2,28 @@
 
 int MAC_address(char * mac)
 {   
-    printf("%s\n", __func__);
+    
+    int fd;
     struct ifreq1 ifr1;
-    struct ifconf ifc;
-    char buf[32];
-    int success = 0;
-    struct sockaddr_in *addr;
+    
+    //char *iface = "wlp7s0";
 
-    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock == -1) { /* handle error*/ };
-    printf("%s1\n", __func__);
+    memset(&ifr1, 0, sizeof(ifr1));
 
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) { /* handle error */ }
-    printf("%s2\n", __func__);
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    strcpy( ifr1.ifr_name , "wlp7s0" );
+    //ifr1.ifr_addr.sa_family = AF_INET;
+    //strncpy(ifr1.ifr_name , iface , IFNAMSIZ1-1);
 
-    struct ifreq1* it = ifc.ifc_req;
-    const struct ifreq1* const end = it + (ifc.ifc_len / sizeof(struct ifreq1));
+        ioctl(fd, SIOCGIFHWADDR, &ifr1); 
+        mac = (unsigned char *)ifr1.ifr_hwaddr.sa_data;
+       // addr1 = (struct sockaddr_in *)&(ifr1.ifr_addr);
+        //strcpy( mac , inet_ntoa(addr1->sin_addr) );
+        //display mac address
+        printf("Mac : %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n" , mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    
 
-    for (; it != end; ++it) {
-        strcpy(ifr1.ifr_name, "wlp7s0");
-        strcpy(ifr1.ifr_name, it->ifr_name);
-        printf("%s3\n", __func__);
-        if (ioctl(sock, SIOCGIFFLAGS, &ifr1) == 0) {
-            printf("%s4\n", __func__);
-            //if (! (ifr1.ifr_flags & IFF_LOOPBACK)) { // don't count loopback
-                if (ioctl(sock, SIOCGIFHWADDR, &ifr1) == 0) {
-                    printf("%s5\n", __func__);
-                    success = 1;
-                    break;
-               // }
-            }
-        }
-        else { /* handle error */ }
-    }
-printf("%s6\n", __func__);
-    unsigned char mac_address[6];
-    printf("%s\n", mac_address);
+    close(fd);
 
-    if (success) memcpy(mac_address, ifr1.ifr_hwaddr.sa_data, 6);
     return 0;
 }

@@ -52,7 +52,7 @@ int GetIP(char * address)
 	memset(&ifr, 0, sizeof(ifr));
 
 	sock_fd = socket( AF_INET , SOCK_DGRAM , 0 );
-	strcpy( ifr.ifr_name , "wlp7s0" );
+	strcpy( ifr.ifr_name , "wlp7s0" );             //wlp7s0
 	ioctl( sock_fd , SIOCGIFADDR , &ifr );
 	addr = (struct sockaddr_in *)&(ifr.ifr_addr);
 	//address=inet_ntoa(addr->sin_addr);

@@ -1,11 +1,9 @@
-#include <sys/types.h>
+#include <stdio.h>    //printf
+#include <string.h>   //strncpy
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <net/if.h>
-#include <stdio.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <net/if.h>   //ifreq
+#include <unistd.h>   //close
 
 #define IFNAMSIZ1 32
 #define LEN_MAC 32
@@ -39,13 +37,6 @@ struct ifreq1 {
 		char           * ifr_data;
 	};
 };
- struct ifconf {
-                      int                 ifc_len; /* size of buffer */
-                      union {
-                          char           *ifc_buf; /* buffer address */
-                          struct ifreq1   *ifc_req; /* array of structures */
-                      };
-                };
 
 int MAC_address(char * mac);
 
