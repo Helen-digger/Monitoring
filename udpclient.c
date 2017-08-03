@@ -8,10 +8,10 @@
 
 int get_srv_ip(sk_t * sk)
 {
-	//printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	sk_t sk_bcast;
-	SK_INIT(sk_bcast, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
-
+	SK_INIT(sk_bcast, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	//for (;;)
 	//{
 		//if (0 > (
@@ -27,41 +27,46 @@ int get_srv_ip(sk_t * sk)
 		//}
 		//sleep(1);
 	//}
-
-	close(sk_bcast.s_out);
-
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	close(sk_bcast.s_in);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	return 0;
 }
 
 int client_build_msg(PC_stat * cl_stat)
 {
-	printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	if (0 != CPU_info(&cl_stat->cpu_stat))
 	{
 		fprintf(stderr, "'%s': ProcessList() failed!\n", __func__);
 		return -1;
 	}
+	printf("%s\n", __func__);
 	if (0 != Mem_Info(&cl_stat->mem_stat)) 
 	{
 		fprintf(stderr, "'%s': Mem_Info() failed!\n", __func__);
 		return -1;
 	}
+	printf("%s\n", __func__);
 	if (0 != Uuid(cl_stat->client_id))
 	{
 		fprintf(stderr,"'%s': Uuid() failed!\n", __func__);
 		return -1;
 	}
+	printf("%s\n", __func__);
 	if (0!=GetIP(cl_stat->IP))
     {
 		fprintf(stderr,"'%s': IP() failed!\n", __func__);
 		return -1;
 	}
+	printf("%s\n", __func__);
     if (0!=MAC_address(cl_stat->mac))
             {
 		fprintf(stderr,"'%s': Mac() failed!\n", __func__);
 		return -1;
 	}
-	if (0!=Time(&cl_stat->time))
+	printf("%s\n", __func__);
+	if (0!=Time(&cl_stat->time1))
             {
 		fprintf(stderr,"'%s': Time() failed!\n", __func__);
 		return -1;
@@ -71,7 +76,7 @@ int client_build_msg(PC_stat * cl_stat)
 
 int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 {
-	printf("%s 0\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	if ( sizeof(PC_stat) != sendto(sk->s_in,
 	                               (void*)cl_stat,
 	                               sizeof(PC_stat),
@@ -101,7 +106,9 @@ int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 }
 
 int main(int argc, char *argv[])
-{
+{	
+	pid_t pid;
+	pid = getpid ();
 	tbf snd_rl = (tbf) {.rate = 1, .burst = 1};
 	sk_t sk;
 
@@ -116,9 +123,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "'%s': get_srv_ip() failed!\n", __func__);
 		return -1;
 	}
+	
+	printf ("PID: %d\n", pid);
 
-	SK_INIT(sk, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET,
-	        htonl(INADDR_ANY), inet_addr(sk.IP), CLIENT_PORT, SERVER_PORT);
+	printf("%s init vars %s\n", "client", errno ? strerror(errno) : "ok");
+
+	SK_INIT(sk, htonl(INADDR_ANY), inet_addr(sk.IP), CLIENT_PORT, SERVER_PORT);
+
+	printf("%s init vars %s\n", "client", errno ? strerror(errno) : "ok");
 
 	for(;;)
 	{
@@ -136,9 +148,8 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
-
+	getchar ();
 	close(sk.s_in);
-	close(sk.s_out);
 
 	return (0);
 }

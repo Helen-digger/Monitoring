@@ -23,7 +23,8 @@
 int send_bcast(sk_t sk)
 {
 	printf("%s IP %s\n", __func__, sk.IP);
-	if (7 >= (sk.snd_size = sendto(sk.s_out,
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	if (7 >= (sk.snd_size = sendto(sk.s_in,
 		                           (void*)sk.IP,
 		                           sizeof(sk.IP),
 		                           0,
@@ -36,6 +37,7 @@ int send_bcast(sk_t sk)
 		return -1;
 	}
 	//else {printf("%s %d\n", sk.IP, sk.snd_size); return 1;}
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	return 0;
 }
 
@@ -43,7 +45,7 @@ int send_bcast(sk_t sk)
 
 int handle_client(sk_t * sk, PC_stat * buffer, server_ans * ans)
 {
-	printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	unsigned int cliAddrLen = sizeof(sk->AnsAddr);
 	if (sizeof(PC_stat) != (sk->rcv_size = recvfrom(sk->s_in,
 							                        (void*)buffer,
@@ -98,7 +100,7 @@ int handle_client(sk_t * sk, PC_stat * buffer, server_ans * ans)
 
 int isReadable(int sock, int * error, int timeOut) 
 {
-	printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	// milliseconds
 	fd_set socketReadSet;
 	FD_ZERO(&socketReadSet);
@@ -125,8 +127,59 @@ int isReadable(int sock, int * error, int timeOut)
 	return FD_ISSET(sock, &socketReadSet) != 0;
 }
 
+int PC_statToFile(PC_stat buffer, int flag)
+{
+	printf("%s fopen %s\n", __func__, errno ? strerror(errno) : "ok");
+	if (0 == flag)
+	{
+	printf("\t%s\n", buffer.client_id);
+	printf("\t%f\n", buffer.cpu_stat);
+	printf("%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
+			buffer.mem_stat.MemTotal, 
+			buffer.mem_stat.MemFree, 
+			buffer.mem_stat.MemAvailable,
+			buffer.mem_stat.Buffers, 
+			buffer.mem_stat.Cached,
+			buffer.mem_stat.SwapCached, 
+			buffer.mem_stat.Active,
+			buffer.mem_stat.Inactive);
+	printf("\t%s\n",buffer.mac);
+	printf("\t%s\n", buffer.IP );
+	//buffer.time_str=(asctime(&buffer.time));
+	 printf("%s", asctime(&buffer.time1));
+	}
+	else
+	{
+		
+		char *filename=(char *)malloc(64);   
+		filename=buffer.client_id;           
+		FILE * file = fopen(filename, "a+");
+		if (file == NULL) 
+		{
+			printf("%s fopen %s\n", __func__, errno ? strerror(errno) : "ok");
+		}
+		else 
+		{
+			fprintf(file,"%s\n", buffer.client_id);
+			fprintf(file,"%f\n", buffer.cpu_stat);
+			fprintf(file, "%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
+					buffer.mem_stat.MemTotal, 
+					buffer.mem_stat.MemFree, 
+					buffer.mem_stat.MemAvailable,
+					buffer.mem_stat.Buffers, 
+					buffer.mem_stat.Cached,
+					buffer.mem_stat.SwapCached, 
+					buffer.mem_stat.Active,
+					buffer.mem_stat.Inactive);
+			fclose(file);
+		}
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
+
 	sk_t       sk, sk_bcast;
 	tbf        rl_bcast       = {.rate = 1, .burst = 1};
 	PC_stat    buffer;
@@ -135,11 +188,11 @@ int main(int argc, char *argv[])
 
 	memset(&buffer,  0, sizeof(PC_stat));
 	memset(&ans_all, 0, sizeof(server_ans));
-	SK_INIT(sk, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET,
-	        htonl(INADDR_ANY), htonl(INADDR_ANY), SERVER_PORT, CLIENT_PORT);
-	SK_INIT_BCAST(sk_bcast, PF_INET, SOCK_DGRAM, IPPROTO_UDP, AF_INET,
-	              htonl(INADDR_ANY), BCAST_PORT);
-	
+	SK_INIT(sk, htonl(INADDR_ANY), htonl(INADDR_ANY), SERVER_PORT, CLIENT_PORT);
+	SK_INIT_BCAST(sk_bcast);
+
+	printf("%s init vars %s\n", "server", errno ? strerror(errno) : "ok");
+
 	if (0 != Uuid(ans_all.server_id))
 	{
 		fprintf(stderr,"'%s': Uuid() failed!\n", __func__);
@@ -151,14 +204,13 @@ int main(int argc, char *argv[])
 		fprintf(stderr,"'%s': IP() failed!\n", __func__);
 		return -1;
 	}
-	timeOut = 500; // ms
+	timeOut = 3000; // ms
 	for (;;) /* Run forever */
 	{
 		if (tbf_rl(&rl_bcast)) send_bcast(sk_bcast);
-
-		//if (isReadable(sk.s_in, &error, timeOut)) 
+		timeOut = 3000; // ms
+		if (isReadable(sk.s_in, &error, timeOut)) 
 		{
-
 			if (0 != handle_client(&sk, &buffer, &ans_all))
 			{
 				fprintf(stderr, "'%s': handle_client() failed!\n", __func__);
@@ -166,53 +218,14 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-
-
-					printf("\t%s\n", buffer.client_id);
-            		printf("\t%f\n", buffer.cpu_stat);
-              		printf( "%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
-                 		buffer.mem_stat.MemTotal, 
-                 		buffer.mem_stat.MemFree, 
-                		buffer.mem_stat.MemAvailable,
-                 		buffer.mem_stat.Buffers, 
-                 		buffer.mem_stat.Cached,
-                 		buffer.mem_stat.SwapCached, 
-                 		buffer.mem_stat.Active,
-                 		buffer.mem_stat.Inactive);
-              		printf("\t%s\n",buffer.mac);
-              		printf("\t%s\n", buffer.IP );
-			/*char *filename=(char *)malloc(64);
-			filename=buffer.client_id;
-    		FILE * file = fopen(filename, "a+");
-   				if (file == NULL) 
-   				{
-      				perror("Cannot open 11");
-  				}
-  				else 
-  				{
-  					fwrite(&buffer, sizeof(buffer)+1, 1, file);
-
-      				fprintf(file,"\t%s\n", buffer.client_id);
-            		fprintf(file,"\t%f\n", buffer.cpu_stat);
-              		fprintf(file, "%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
-                 		buffer.mem_stat.MemTotal, 
-                 		buffer.mem_stat.MemFree, 
-                		buffer.mem_stat.MemAvailable,
-                 		buffer.mem_stat.Buffers, 
-                 		buffer.mem_stat.Cached,
-                 		buffer.mem_stat.SwapCached, 
-                 		buffer.mem_stat.Active,
-                 		buffer.mem_stat.Inactive);
-              		fclose(file);
-  				}*/
-  			} 
- 
+				PC_statToFile(buffer, 0);
+				PC_statToFile(buffer, 1);
+			}
 		}
 	}
 
 	close(sk.s_in);
-	close(sk.s_out);
-	close(sk_bcast.s_out);
+	close(sk_bcast.s_in);
 
 	return 0;
 }

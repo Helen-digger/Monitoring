@@ -1,7 +1,7 @@
 #include "cpustat.h"
 int CPU_info(double * val)
 {
-	printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	unsigned long long int PrevIdle, Idle, PrevNonIdle, NonIdle, PrevTotal, Total, totald, idled;
 	FILE * file = fopen(PROCSTATFILE, "r");
 	if (file == NULL) 

@@ -4,10 +4,11 @@
 #include <sys/ioctl.h>
 #include <net/if.h>   //ifreq
 #include <unistd.h>   //close
+#include <netinet/in.h>
+#include <netinet/in.h>
 
-#define IFNAMSIZ1 32
-#define LEN_MAC 32
 
+/*
 struct ifmap1 
 {
 	unsigned long   mem_start;
@@ -39,4 +40,4 @@ struct ifreq1 {
 };
 
 int MAC_address(char * mac);
-
+*/

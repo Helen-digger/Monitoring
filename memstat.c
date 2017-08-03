@@ -2,7 +2,7 @@
 
 int Mem_Info(Memlist *mem_stat) 
 {
-	printf("%s\n", __func__);
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	char buffer1[128];
 	FILE * file = fopen(PROCMEMINFOFILE, "r");
 	if (file == NULL)

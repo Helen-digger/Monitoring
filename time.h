@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <errno.h>
 
 typedef struct  {
         int tm_sec;                         // секунды 0..59 
@@ -14,5 +15,5 @@ typedef struct  {
                           // =0, если нет поправки,
                           // <0, если неизвестно 
       } tm ;
-int Time(tm *ptr);
+int Time(tm *time1);
 

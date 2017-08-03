@@ -1,10 +1,10 @@
 #include "time.h"
 
-int Time( tm *ptr)
+int Time( tm *time1)
 {
-time_t It;
-It = time(NULL);
-ptr = localtime(&It);
-printf(asctime(ptr));
-return 0;
+	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	time_t It;
+	It = time(NULL);
+	localtime_r(&It, time1);
+	return 0;
 }
