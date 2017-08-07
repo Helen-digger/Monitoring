@@ -106,12 +106,10 @@ int PC_statToFile(PC_stat buffer, int flag)
 	else
 	{
 		//Алена, пожалуйста, исправь!
-		char *filename=(char *)malloc(64);   //зачем можно было обойтись стическим массивом
-		filename=buffer.client_id;           //неправильно пользуешься указателем!!!  утечка памяти тут! где free??? а зачем нужны функции strcpy/strncpy/sprintf ????
-		FILE * file = fopen(filename, "a+"); // что мешает сразу в качестве имени испольсовать buffer.client_id ????
-		//стоит задать статический массив под имя файла,
-		// размер обределить исходя из суммы длинны пути к файлу и имени самого файла,
-		// и записать в массив имя спомощью sprintf
+		char *filename=(char *)malloc(64);   
+		filename=buffer.client_id;           
+		FILE * file = fopen(filename, "a+"); 
+		
 		if (file == NULL) 
 		{
 			printf("%s fopen %s\n", __func__, (errno ? strerror(errno) : "ok"));
