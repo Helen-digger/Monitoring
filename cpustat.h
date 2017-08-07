@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <sys/times.h>
 #include <unistd.h>
-#include <time.h>
+#include <stdint.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <math.h>
+#include <string.h>
 #include <errno.h>
 
 #define INTERVAL 250000
@@ -15,6 +18,11 @@
 #ifndef PROCMEMINFOFILE
 #define PROCMEMINFOFILE PROCDIR "/meminfo"
 #endif
+
+/*struct timespec {
+	time_t	tv_sec;
+	long	tv_nsec;
+};*/
 
 typedef struct
 {
@@ -30,5 +38,7 @@ typedef struct
 
 ProcessList this;
 ProcessList prev;
+
+struct tm *localtime_r(const time_t *timep, struct tm *result);
 
 int CPU_info(double * val);

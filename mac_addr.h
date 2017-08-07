@@ -38,6 +38,7 @@ struct ifreq1 {
 		char           * ifr_data;
 	};
 };
-
-int MAC_address(char * mac);
 */
+int MAC_address(char * mac);
+
+int list_ifaces();

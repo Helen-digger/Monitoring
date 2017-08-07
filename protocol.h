@@ -1,3 +1,14 @@
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/select.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+
 #include "memstat.h"
 #include "cpustat.h"
 #include "uuid.h"
@@ -5,13 +16,21 @@
 #include "id_client.h"
 #include "mac_addr.h"
 #include "time.h"
-#include <errno.h>
+#include "loadavg.h"
 
-#define SERVER_PORT 2048
-#define BCAST_PORT  4091
-#define CLIENT_PORT 2049
-#define IP4_STR_LEN 16
-#define TIME_MAX 32
+
+#define SOCKET_ERROR        -1
+
+#define SERVER_PORT         2048
+#define SRV_BCAST_RL (tbf) {.rate = 1, .burst = 1}
+
+#define BCAST_PORT          4091
+#define SRV_LISTEN_T        3000
+
+#define CLIENT_PORT         2049
+
+#define IP4_STR_LEN         16
+#define TIME_MAX            32
 
 typedef enum
 {
@@ -30,11 +49,12 @@ typedef struct
 {
 	char client_id[ID_LEN];
 	char mac[LEN_MAC];
-	char IP[IP4_STR_LEN];
+	//char IP[IP4_STR_LEN];
 	double cpu_stat;
 	Memlist mem_stat;
-	tm time1;
+	struct tm time1;
 	char time_str[TIME_MAX];
+	AVGList avginfo;
 } PC_stat;
 
 typedef struct
@@ -66,7 +86,7 @@ do {                                                                            
 	_sk_.RemoteAddr.sin_addr.s_addr = _r_ip_;                                     \
 	_sk_.RemoteAddr.sin_port        = htons(_rport_);                             \
 	int optval = 1;                                                               \
-    setsockopt(_sk_.s_in, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));     \
+	setsockopt(_sk_.s_in, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));     \
 	if (0 > bind(_sk_.s_in,                                                       \
 	             (const struct sockaddr *) &_sk_.LocalAddr,                       \
 	             sizeof(_sk_.LocalAddr)))                                         \
@@ -100,4 +120,4 @@ do {                                                                            
 	_sk_.RemoteAddr.sin_port        = htons(BCAST_PORT);                                    \
 } while (0)
 
-void DieWithError(char *errorMessage);
+int isReadable(int sock, int * error, int timeOut);

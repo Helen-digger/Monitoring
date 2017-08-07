@@ -1,41 +1,40 @@
-#include <stdio.h> 
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include "protocol.h"
 
 int get_srv_ip(sk_t * sk)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	sk_t sk_bcast;
 	SK_INIT(sk_bcast, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	//for (;;)
 	//{
+		unsigned int sk_size = sizeof(sk_bcast.AnsAddr);
 		//if (0 > (
 		sk_bcast.rcv_size = recvfrom(sk_bcast.s_in,
-		                                      (void *) sk->IP,
-		                                      sizeof(sk->IP),
-		                                      0, NULL, 0);//))
+		                                      0,//(void *) sk->IP,
+		                                      0,//sizeof(sk->IP),
+		                                      0,
+		                                      (struct sockaddr *) &sk_bcast.AnsAddr,
+	                                          &sk_size);//))
 		//{
-			printf("size %d IP(%s)\n", sk_bcast.rcv_size, sk->IP);
+			//printf("size %d IP(%s)\n", sk_bcast.rcv_size, sk->IP);
+			///memset(sk->IP, 0, sizeof(sk->IP));
+			strncpy(sk->IP, inet_ntoa(sk_bcast.AnsAddr.sin_addr), sizeof(sk->IP));
+			printf("sk_size %u inet_ntoa(%s)\n", sk_size, sk->IP);
 			//break;
 		//	fprintf(stderr, "'%s': recvfrom() failed!\n", __func__);
 		//	return -1;
 		//}
 		//sleep(1);
 	//}
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	close(sk_bcast.s_in);
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	return 0;
 }
 
 int client_build_msg(PC_stat * cl_stat)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	if (0 != CPU_info(&cl_stat->cpu_stat))
 	{
 		fprintf(stderr, "'%s': ProcessList() failed!\n", __func__);
@@ -53,16 +52,22 @@ int client_build_msg(PC_stat * cl_stat)
 		fprintf(stderr,"'%s': Uuid() failed!\n", __func__);
 		return -1;
 	}
-	printf("%s\n", __func__);
-	if (0!=GetIP(cl_stat->IP))
+	//printf("%s\n", __func__);
+	/*if (0!=GetIP(cl_stat->IP))
     {
 		fprintf(stderr,"'%s': IP() failed!\n", __func__);
 		return -1;
 	}
-	printf("%s\n", __func__);
+	printf("%s\n", __func__);*/
     if (0!=MAC_address(cl_stat->mac))
             {
 		fprintf(stderr,"'%s': Mac() failed!\n", __func__);
+		return -1;
+	}
+	printf("%s\n", __func__);
+	if (0 != Load(&cl_stat->avginfo))
+	{
+		fprintf(stderr,"'%s': Load() failed!\n", __func__);
 		return -1;
 	}
 	printf("%s\n", __func__);
@@ -76,7 +81,7 @@ int client_build_msg(PC_stat * cl_stat)
 
 int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	if ( sizeof(PC_stat) != sendto(sk->s_in,
 	                               (void*)cl_stat,
 	                               sizeof(PC_stat),
@@ -100,7 +105,12 @@ int client_handle_msg(sk_t * sk, PC_stat * cl_stat, server_ans * ans)
 		fprintf(stderr, "'%s': recvfrom() failed!\n", __func__);
 		return -1;
 	}
-	
+	/*DOTO проверить отправителя и сообщение*/
+	/*if (sk->AnsAddr.sin_addr.s_addr != inet_addr(sk->IP))
+	{
+		fprintf(stderr,"'%s': received a packet from unknown source.\n", __func__);
+		return -1;
+	}*/
 
 	return 0;
 }
@@ -126,11 +136,11 @@ int main(int argc, char *argv[])
 	
 	printf ("PID: %d\n", pid);
 
-	printf("%s init vars %s\n", "client", errno ? strerror(errno) : "ok");
+	printf("%s init vars %s\n", "client", (errno ? strerror(errno) : "ok"));
 
 	SK_INIT(sk, htonl(INADDR_ANY), inet_addr(sk.IP), CLIENT_PORT, SERVER_PORT);
 
-	printf("%s init vars %s\n", "client", errno ? strerror(errno) : "ok");
+	printf("%s init vars %s\n", "client", (errno ? strerror(errno) : "ok"));
 
 	for(;;)
 	{

@@ -1,16 +1,4 @@
-#include <stdio.h>
-#include <sys/socket.h> 
-#include <arpa/inet.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/select.h>
-#include <sys/ioctl.h>
-
 #include "protocol.h"
-
-#define SOCKET_ERROR -1
 
 /* Select() params
 	 * int select(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
@@ -22,30 +10,20 @@
 
 int send_bcast(sk_t sk)
 {
-	printf("%s IP %s\n", __func__, sk.IP);
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
-	if (7 >= (sk.snd_size = sendto(sk.s_in,
-		                           (void*)sk.IP,
-		                           sizeof(sk.IP),
-		                           0,
-		                           (struct sockaddr *) &sk.RemoteAddr,
-		                           sizeof(sk.RemoteAddr))))
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	if (0 < (sk.snd_size = sendto(sk.s_in, 0, 0, 0,
+		                          (struct sockaddr *) &sk.RemoteAddr,
+		                          sizeof(sk.RemoteAddr))))
 	{
-		printf("ip %s\n", sk.IP);
-		fprintf(stderr, "'%s': sendto() failed!\n", __func__);
-		perror("ERROR:");
+		printf("%s sendto() failed %s\n", __func__, (errno ? strerror(errno) : "ok"));
 		return -1;
 	}
-	//else {printf("%s %d\n", sk.IP, sk.snd_size); return 1;}
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
 	return 0;
 }
 
-
-
 int handle_client(sk_t * sk, PC_stat * buffer, server_ans * ans)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	unsigned int cliAddrLen = sizeof(sk->AnsAddr);
 	if (sizeof(PC_stat) != (sk->rcv_size = recvfrom(sk->s_in,
 							                        (void*)buffer,
@@ -98,38 +76,9 @@ int handle_client(sk_t * sk, PC_stat * buffer, server_ans * ans)
 	return 0;
 }
 
-int isReadable(int sock, int * error, int timeOut) 
-{
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
-	// milliseconds
-	fd_set socketReadSet;
-	FD_ZERO(&socketReadSet);
-	FD_SET(sock, &socketReadSet);
-	struct timeval tv;
-	if (timeOut)
-	{
-		tv.tv_sec  = timeOut / 1000;
-		tv.tv_usec = (timeOut % 1000) * 1000;
-	}
-	else
-	{
-		tv.tv_sec  = 0;
-		tv.tv_usec = 0;
-	}
-
-	if (select(sock+1, &socketReadSet, 0, 0, &tv) == SOCKET_ERROR)
-	{
-		*error = 1;
-		return 0;
-	}
-
-	*error = 0;
-	return FD_ISSET(sock, &socketReadSet) != 0;
-}
-
 int PC_statToFile(PC_stat buffer, int flag)
 {
-	printf("%s fopen %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s fopen %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	if (0 == flag)
 	{
 	printf("\t%s\n", buffer.client_id);
@@ -143,20 +92,29 @@ int PC_statToFile(PC_stat buffer, int flag)
 			buffer.mem_stat.SwapCached, 
 			buffer.mem_stat.Active,
 			buffer.mem_stat.Inactive);
-	printf("\t%s\n",buffer.mac);
-	printf("\t%s\n", buffer.IP );
+	//printf("\t%s\n",buffer.mac);
+	//printf("\t%s\n", buffer.IP );
 	//buffer.time_str=(asctime(&buffer.time));
-	 printf("%s", asctime(&buffer.time1));
+	printf("cpu now :%f 5:%f 15:%f \n",
+	       buffer.avginfo.avg_now,
+	       buffer.avginfo.avg_five,
+	       buffer.avginfo.avg_fifteen
+	       //avginfo->proccess
+	       );
+	 printf("%s", asctime((const struct tm *)&buffer.time1));
 	}
 	else
 	{
-		
-		char *filename=(char *)malloc(64);   
-		filename=buffer.client_id;           
-		FILE * file = fopen(filename, "a+");
+		//Алена, пожалуйста, исправь!
+		char *filename=(char *)malloc(64);   //зачем можно было обойтись стическим массивом
+		filename=buffer.client_id;           //неправильно пользуешься указателем!!!  утечка памяти тут! где free??? а зачем нужны функции strcpy/strncpy/sprintf ????
+		FILE * file = fopen(filename, "a+"); // что мешает сразу в качестве имени испольсовать buffer.client_id ????
+		//стоит задать статический массив под имя файла,
+		// размер обределить исходя из суммы длинны пути к файлу и имени самого файла,
+		// и записать в массив имя спомощью sprintf
 		if (file == NULL) 
 		{
-			printf("%s fopen %s\n", __func__, errno ? strerror(errno) : "ok");
+			printf("%s fopen %s\n", __func__, (errno ? strerror(errno) : "ok"));
 		}
 		else 
 		{
@@ -179,37 +137,30 @@ int PC_statToFile(PC_stat buffer, int flag)
 
 int main(int argc, char *argv[])
 {
-
+	//if (list_ifaces()) return -1;
 	sk_t       sk, sk_bcast;
-	tbf        rl_bcast       = {.rate = 1, .burst = 1};
+	tbf        rl_bcast       = SRV_BCAST_RL;
 	PC_stat    buffer;
 	server_ans ans_all;
-	int        error, timeOut;
+	int        error;
 
 	memset(&buffer,  0, sizeof(PC_stat));
 	memset(&ans_all, 0, sizeof(server_ans));
 	SK_INIT(sk, htonl(INADDR_ANY), htonl(INADDR_ANY), SERVER_PORT, CLIENT_PORT);
 	SK_INIT_BCAST(sk_bcast);
 
-	printf("%s init vars %s\n", "server", errno ? strerror(errno) : "ok");
+	printf("%s init vars %s\n", "server", (errno ? strerror(errno) : "ok"));
 
 	if (0 != Uuid(ans_all.server_id))
 	{
 		fprintf(stderr,"'%s': Uuid() failed!\n", __func__);
 		return -1;
 	}
-	//char myip[IP4_STR_LEN];
-	if (0 !=  GetIP(sk_bcast.IP))
-	{
-		fprintf(stderr,"'%s': IP() failed!\n", __func__);
-		return -1;
-	}
-	timeOut = 3000; // ms
+
 	for (;;) /* Run forever */
 	{
 		if (tbf_rl(&rl_bcast)) send_bcast(sk_bcast);
-		timeOut = 3000; // ms
-		if (isReadable(sk.s_in, &error, timeOut)) 
+		if (isReadable(sk.s_in, &error, SRV_LISTEN_T))
 		{
 			if (0 != handle_client(&sk, &buffer, &ans_all))
 			{

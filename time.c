@@ -1,10 +1,10 @@
 #include "time.h"
 
-int Time( tm *time1)
+int Time(struct tm *time1)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	time_t It;
 	It = time(NULL);
-	localtime_r(&It, time1);
+	localtime_r((const time_t *)&It, time1);
 	return 0;
 }

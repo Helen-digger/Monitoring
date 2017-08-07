@@ -1,7 +1,7 @@
 #include "cpustat.h"
 int CPU_info(double * val)
 {
-	printf("%s %s\n", __func__, errno ? strerror(errno) : "ok");
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	unsigned long long int PrevIdle, Idle, PrevNonIdle, NonIdle, PrevTotal, Total, totald, idled;
 	FILE * file = fopen(PROCSTATFILE, "r");
 	if (file == NULL) 
@@ -21,7 +21,10 @@ int CPU_info(double * val)
 	       &prev.softirq,
 	       &prev.steal);
 
-	fclose(file); 
+	fclose(file);
+	/*struct timeval ts;
+	ts.tv_sec = 1000*INTERVAL;
+	nanosleep(&ts, NULL);*/
 	usleep(INTERVAL);
 	file = fopen(PROCSTATFILE, "r");
 	if (file == NULL) 
