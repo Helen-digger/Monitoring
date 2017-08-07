@@ -105,7 +105,7 @@ int PC_statToFile(PC_stat buffer, int flag)
 	}
 	else
 	{
-		//Алена, пожалуйста, исправь!
+		
 		char *filename=(char *)malloc(64);   
 		filename=buffer.client_id;           
 		FILE * file = fopen(filename, "a+"); 
