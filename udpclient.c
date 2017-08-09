@@ -32,7 +32,7 @@ int get_srv_ip(sk_t * sk)
 	return 0;
 }
 
-int client_build_msg(PC_stat * cl_stat)
+int client_build_msg(PC_stat * cl_stat, char * ifname)
 {
 	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	if (0 != CPU_info(&cl_stat->cpu_stat))
@@ -59,7 +59,7 @@ int client_build_msg(PC_stat * cl_stat)
 		return -1;
 	}
 	printf("%s\n", __func__);*/
-    if (0!=MAC_address(cl_stat->mac))
+    if (0!=MAC_address(cl_stat->mac, ifname))
             {
 		fprintf(stderr,"'%s': Mac() failed!\n", __func__);
 		return -1;
@@ -124,6 +124,11 @@ int main(int argc, char *argv[])
 
 	PC_stat client_status;
 	server_ans ans_me;
+	if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [IFNAME]\n", argv[0]);
+		return -1;
+	}
 
 	memset(&client_status, 0, sizeof(PC_stat));
 	memset(&ans_me, 0, sizeof(server_ans));
@@ -146,7 +151,7 @@ int main(int argc, char *argv[])
 	{
 		if (!tbf_rl(&snd_rl)) continue;
 
-		if (0 != client_build_msg(&client_status))
+		if (0 != client_build_msg(&client_status, argv[1]))
 		{
 			fprintf(stderr, "'%s': client_build_msg() failed!\n", __func__);
 			return -1;

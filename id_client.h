@@ -14,8 +14,7 @@
 #else
 #include <net/if.h>
 #endif
-#define IFNAMSIZ 16
-#define LEN_MAC 32
+
 
 /*struct ifmap 
 {

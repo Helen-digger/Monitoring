@@ -23,15 +23,16 @@
 	return 0;
 }*/
 
-int MAC_address(char * mac)
+int MAC_address(char * mac, char * ifname)
 {
 int fd;
 	struct ifreq ifr;
 
 	memset(&ifr, 0, sizeof(ifr));
+	memset(mac, 0, LEN_MAC);
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	strcpy( ifr.ifr_name , "wlp7s0" );
+	strncpy( ifr.ifr_name , ifname, IFNAMSIZ);
 
 		ioctl(fd, SIOCGIFHWADDR, &ifr); 
 		//mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
@@ -40,14 +41,14 @@ int fd;
 		//display mac address
 		unsigned char hwa[6];
 		memcpy(hwa, ifr.ifr_hwaddr.sa_data, 6);
-		printf("%s Mac : %X:%X:%X:%X:%X:%X\n" ,
-				__func__, hwa[0], hwa[1], hwa[2], hwa[3], hwa[4], hwa[5]);
+		snprintf(mac, LEN_MAC,"%2X:%2X:%2X:%2X:%2X:%2X" ,
+				 hwa[0], hwa[1], hwa[2], hwa[3], hwa[4], hwa[5]);
 
 	close(fd);
 	return 0;
 }
 
-int list_ifaces()
+/*int list_ifaces()
 {
 	char		  buf[1024];
 	struct ifconf ifc;
@@ -57,14 +58,14 @@ int list_ifaces()
 	int           nInterfaces;
 	int           i;
 
-/* Get a socket handle. */
+/* Get a socket handle. 
 	if(0 > (sck = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)))
 	{
 		perror("socket");
 		return 1;
 	}
 
-/* Query available interfaces. */
+/* Query available interfaces. 
 	ifc.ifc_len = sizeof(buf);
 	ifc.ifc_buf = buf;
 	if(0 > ioctl(sck, SIOCGIFCONF, &ifc))
@@ -104,7 +105,7 @@ int list_ifaces()
 	IFF_SLAVE_NEEDARP    Interface needs ARPs for validation.
 	IFF_ISATAP           Interface is RFC4214 ISATAP interface.
 */
-/* Iterate through the list of interfaces. */
+/* Iterate through the list of interfaces. 
 	if(0 > (sck = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)))
 	{
 		perror("socket");
@@ -157,11 +158,11 @@ int list_ifaces()
 			}
 
 
-		/* Get the broadcast address (added by Eric) */
+		/* Get the broadcast address (added by Eric) 
 		if(ioctl(sck, SIOCGIFBRDADDR, item) >= 0)
 			printf(", BROADCAST %s", inet_ntoa(((struct sockaddr_in *)&item->ifr_broadaddr)->sin_addr));
 		printf("\n");
 	}
 	close(sck);
 	return 0;
-}
+} */

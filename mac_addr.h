@@ -6,6 +6,8 @@
 #include <unistd.h>   //close
 #include <netinet/in.h>
 #include <netinet/in.h>
+#define IFNAMSIZ 16
+#define LEN_MAC 18
 
 
 /*
@@ -39,6 +41,6 @@ struct ifreq1 {
 	};
 };
 */
-int MAC_address(char * mac);
+int MAC_address(char * mac, char * ifname);
 
-int list_ifaces();
+//int list_ifaces();

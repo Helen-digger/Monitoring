@@ -97,7 +97,7 @@ do {                                                                            
 	}                                                                             \
 } while (0)
 
-#define SK_INIT_BCAST(_sk_)                                                                 \
+#define SK_INIT_BCAST(_sk_, _ip_bcast_)                                                     \
 do {                                                                                        \
 	if (0 > (_sk_.s_in = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)))                         \
 	{                                                                                       \
@@ -116,8 +116,8 @@ do {                                                                            
 	}                                                                                       \
 	memset(&_sk_.RemoteAddr, 0, sizeof(_sk_.RemoteAddr));                                   \
 	_sk_.RemoteAddr.sin_family      = AF_INET;                                              \
-	_sk_.RemoteAddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);                              \
+	_sk_.RemoteAddr.sin_addr.s_addr = inet_addr(_ip_bcast_);                                \
 	_sk_.RemoteAddr.sin_port        = htons(BCAST_PORT);                                    \
-} while (0)
+} while (0)     //htonl(INADDR_BROADCAST);
 
 int isReadable(int sock, int * error, int timeOut);

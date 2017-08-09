@@ -83,7 +83,7 @@ int PC_statToFile(PC_stat buffer, int flag)
 	{
 	printf("\t%s\n", buffer.client_id);
 	printf("\t%f\n", buffer.cpu_stat);
-	printf("%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
+	printf("%32lu\n %32lu \n %32lu \n %32lu\n %32lu\n %32lu\n %32lu\n %32lu\n\n", 
 			buffer.mem_stat.MemTotal, 
 			buffer.mem_stat.MemFree, 
 			buffer.mem_stat.MemAvailable,
@@ -92,8 +92,8 @@ int PC_statToFile(PC_stat buffer, int flag)
 			buffer.mem_stat.SwapCached, 
 			buffer.mem_stat.Active,
 			buffer.mem_stat.Inactive);
-	//printf("\t%s\n",buffer.mac);
-	//printf("\t%s\n", buffer.IP );
+	printf("%s\n",buffer.mac);
+	//printf("%s\n", buffer.IP );
 	//buffer.time_str=(asctime(&buffer.time));
 	printf("cpu now :%f 5:%f 15:%f \n",
 	       buffer.avginfo.avg_now,
@@ -105,7 +105,6 @@ int PC_statToFile(PC_stat buffer, int flag)
 	}
 	else
 	{
-		
 		char *filename=(char *)malloc(64);   
 		filename=buffer.client_id;           
 		FILE * file = fopen(filename, "a+"); 
@@ -116,9 +115,10 @@ int PC_statToFile(PC_stat buffer, int flag)
 		}
 		else 
 		{
-			fprintf(file,"%s\n", buffer.client_id);
-			fprintf(file,"%f\n", buffer.cpu_stat);
-			fprintf(file, "%32lu\n  %32lu \n %32lu \n  %32lu \n  %32lu \n  %32lu \n  %32lu \n %32lu \n\n", 
+			fprintf(file,"%s\n", asctime((const struct tm *)&buffer.time1));
+			fprintf(file,"UUID: %s\n", buffer.client_id);
+			fprintf(file,"CPU_USAGE%f\n", buffer.cpu_stat);
+			fprintf(file, "MemTotal %32lu\nMemFree %32lu\nMemAvailable %32lu\nBuffers %32lu\nCached %32lu\nSwapCached %32lu\nActive %32lu\nInactive %32lu\n\n", 
 					buffer.mem_stat.MemTotal, 
 					buffer.mem_stat.MemFree, 
 					buffer.mem_stat.MemAvailable,
@@ -127,6 +127,12 @@ int PC_statToFile(PC_stat buffer, int flag)
 					buffer.mem_stat.SwapCached, 
 					buffer.mem_stat.Active,
 					buffer.mem_stat.Inactive);
+			fprintf(file,"cpu now :%f 5:%f 15:%f \n",
+					buffer.avginfo.avg_now,
+					buffer.avginfo.avg_five,
+					buffer.avginfo.avg_fifteen);
+			fprintf(file,"MAC %s\n",buffer.mac);
+			//fprintf(file,"IP %s\n", buffer.IP);
 			fclose(file);
 		}
 	}
@@ -142,10 +148,16 @@ int main(int argc, char *argv[])
 	server_ans ans_all;
 	int        error;
 
+	if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [IP_BCAST]\n", argv[0]);
+		return -1;
+	}
+
 	memset(&buffer,  0, sizeof(PC_stat));
 	memset(&ans_all, 0, sizeof(server_ans));
 	SK_INIT(sk, htonl(INADDR_ANY), htonl(INADDR_ANY), SERVER_PORT, CLIENT_PORT);
-	SK_INIT_BCAST(sk_bcast);
+	SK_INIT_BCAST(sk_bcast, argv[1]);
 
 	printf("%s init vars %s\n", "server", (errno ? strerror(errno) : "ok"));
 
@@ -167,7 +179,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				PC_statToFile(buffer, 0);
+				//PC_statToFile(buffer, 0);
 				PC_statToFile(buffer, 1);
 			}
 		}
