@@ -1,25 +1,48 @@
 #include "protocol.h"
 
+#if defined(MCAST)
 int get_srv_ip(sk_t * sk)
 {
 	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
-	sk_t sk_bcast;
-	SK_INIT(sk_bcast, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
+	sk_t sk_cast;
+	SK_INIT_MCAST_CLT(sk_cast, htonl(INADDR_ANY), htonl(INADDR_ANY), MCAST_PORT, 0);
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	unsigned int sk_size = sizeof(sk_cast.AnsAddr);
+	sk_cast.rcv_size = recvfrom(sk_cast.s_in,
+	                                      0,
+	                                      0,
+	                                      0,
+	                                      (struct sockaddr *) &sk_cast.AnsAddr,
+	                                      &sk_size);
+
+	strncpy(sk->IP, inet_ntoa(sk_cast.AnsAddr.sin_addr), sizeof(sk->IP));
+	printf("sk_size %u inet_ntoa(%s)\n", sk_size, sk->IP);
+
+	close(sk_cast.s_in);
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	return 0;
+}
+#elif defined(BCAST)
+int get_srv_ip(sk_t * sk)
+{
+	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	sk_t sk_cast;
+	SK_INIT(sk_cast, htonl(INADDR_ANY), htonl(INADDR_ANY), BCAST_PORT, 0);
 	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	//for (;;)
 	//{
-		unsigned int sk_size = sizeof(sk_bcast.AnsAddr);
+		unsigned int sk_size = sizeof(sk_cast.AnsAddr);
 		//if (0 > (
-		sk_bcast.rcv_size = recvfrom(sk_bcast.s_in,
+		sk_cast.rcv_size = recvfrom(sk_cast.s_in,
 		                                      0,//(void *) sk->IP,
 		                                      0,//sizeof(sk->IP),
 		                                      0,
-		                                      (struct sockaddr *) &sk_bcast.AnsAddr,
+		                                      (struct sockaddr *) &sk_cast.AnsAddr,
 	                                          &sk_size);//))
 		//{
-			//printf("size %d IP(%s)\n", sk_bcast.rcv_size, sk->IP);
+			//printf("size %d IP(%s)\n", sk_cast.rcv_size, sk->IP);
 			///memset(sk->IP, 0, sizeof(sk->IP));
-			strncpy(sk->IP, inet_ntoa(sk_bcast.AnsAddr.sin_addr), sizeof(sk->IP));
+			strncpy(sk->IP, inet_ntoa(sk_cast.AnsAddr.sin_addr), sizeof(sk->IP));
 			printf("sk_size %u inet_ntoa(%s)\n", sk_size, sk->IP);
 			//break;
 		//	fprintf(stderr, "'%s': recvfrom() failed!\n", __func__);
@@ -27,10 +50,11 @@ int get_srv_ip(sk_t * sk)
 		//}
 		//sleep(1);
 	//}
-	close(sk_bcast.s_in);
+	close(sk_cast.s_in);
 	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	return 0;
 }
+#endif
 
 int client_build_msg(PC_stat * cl_stat, char * ifname)
 {

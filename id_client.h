@@ -8,12 +8,12 @@
 #include <netinet/in.h>
 #include <errno.h>
 //#include <linux/if.h>
-#include <linux/if_tun.h>
-#ifdef __linux__
-#include <linux/if.h>
-#else
+//#include <linux/if_tun.h>
+//#ifdef __linux__
+//#include <linux/if.h>
+//#else
 #include <net/if.h>
-#endif
+//#endif
 
 
 /*struct ifmap 

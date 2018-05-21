@@ -5,8 +5,7 @@
 #include <net/if.h>   //ifreq
 #include <unistd.h>   //close
 #include <netinet/in.h>
-#include <netinet/in.h>
-#define IFNAMSIZ 16
+//#define IFNAMSIZ 16
 #define LEN_MAC 18
 
 

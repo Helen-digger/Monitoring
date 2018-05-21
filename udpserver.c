@@ -7,8 +7,12 @@
 	 * FD_ISSET(int fd, fd_set *set);
 	 * FD_ZERO(fd_set *set);
 	*/
+#if defined(MCAST)
 
-int send_bcast(sk_t sk)
+#elif defined(BCAST)
+
+#endif
+int send_cast(sk_t sk)
 {
 	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
 	if (0 < (sk.snd_size = sendto(sk.s_in, 0, 0, 0,
@@ -142,22 +146,30 @@ int PC_statToFile(PC_stat buffer, int flag)
 int main(int argc, char *argv[])
 {
 	//if (list_ifaces()) return -1;
-	sk_t       sk, sk_bcast;
-	tbf        rl_bcast       = SRV_BCAST_RL;
+	sk_t       sk, sk_cast;
+	tbf        rl_cast       = SRV_CAST_RL;
 	PC_stat    buffer;
 	server_ans ans_all;
 	int        error;
-
+#if defined(MCAST)
+	if (0) if (argc < 2)
+	{
+		fprintf(stderr, "Usage: %s [IP_BCAST]\n", argv[0]);
+		return -1;
+	}
+	SK_INIT_MCAST_SRV(sk_cast, MCAST_ADDR);
+#elif defined(BCAST)
 	if (argc < 2)
 	{
 		fprintf(stderr, "Usage: %s [IP_BCAST]\n", argv[0]);
 		return -1;
 	}
+	SK_INIT_BCAST(sk_cast, argv[1]);
+#endif
 
 	memset(&buffer,  0, sizeof(PC_stat));
 	memset(&ans_all, 0, sizeof(server_ans));
 	SK_INIT(sk, htonl(INADDR_ANY), htonl(INADDR_ANY), SERVER_PORT, CLIENT_PORT);
-	SK_INIT_BCAST(sk_bcast, argv[1]);
 
 	printf("%s init vars %s\n", "server", (errno ? strerror(errno) : "ok"));
 
@@ -169,7 +181,7 @@ int main(int argc, char *argv[])
 
 	for (;;) /* Run forever */
 	{
-		if (tbf_rl(&rl_bcast)) send_bcast(sk_bcast);
+		if (tbf_rl(&rl_cast)) send_cast(sk_cast);
 		if (isReadable(sk.s_in, &error, SRV_LISTEN_T))
 		{
 			if (0 != handle_client(&sk, &buffer, &ans_all))
@@ -186,7 +198,7 @@ int main(int argc, char *argv[])
 	}
 
 	close(sk.s_in);
-	close(sk_bcast.s_in);
+	close(sk_cast.s_in);
 
 	return 0;
 }
