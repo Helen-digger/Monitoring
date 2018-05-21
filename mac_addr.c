@@ -58,14 +58,14 @@ int fd;
 	int           nInterfaces;
 	int           i;
 
-/* Get a socket handle. 
+// Get a socket handle. 
 	if(0 > (sck = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)))
 	{
 		perror("socket");
 		return 1;
 	}
 
-/* Query available interfaces. 
+// Query available interfaces. 
 	ifc.ifc_len = sizeof(buf);
 	ifc.ifc_buf = buf;
 	if(0 > ioctl(sck, SIOCGIFCONF, &ifc))
@@ -74,7 +74,7 @@ int fd;
 		return 1;
 	}
 	close(sck);
-/*
+//
 	IFF_UP            Interface is running.
 	IFF_BROADCAST     Valid broadcast address set.
 	IFF_DEBUG         Internal debugging flag.
@@ -158,7 +158,7 @@ int fd;
 			}
 
 
-		/* Get the broadcast address (added by Eric) 
+		// Get the broadcast address (added by Eric) 
 		if(ioctl(sck, SIOCGIFBRDADDR, item) >= 0)
 			printf(", BROADCAST %s", inet_ntoa(((struct sockaddr_in *)&item->ifr_broadaddr)->sin_addr));
 		printf("\n");
