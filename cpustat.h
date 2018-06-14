@@ -19,11 +19,6 @@
 #define PROCMEMINFOFILE PROCDIR "/meminfo"
 #endif
 
-/*struct timespec {
-	time_t	tv_sec;
-	long	tv_nsec;
-};*/
-
 typedef struct
 {
 	unsigned long long int user;

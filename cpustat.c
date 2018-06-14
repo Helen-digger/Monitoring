@@ -1,7 +1,7 @@
 #include "cpustat.h"
 int CPU_info(double * val)
 {
-	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	/*printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));*/
 	unsigned long long int PrevIdle, Idle, PrevNonIdle, NonIdle, PrevTotal, Total, totald, idled;
 	FILE * file = fopen(PROCSTATFILE, "r");
 	if (file == NULL) 
@@ -9,22 +9,26 @@ int CPU_info(double * val)
 		perror("Cannot open " PROCSTATFILE);
 		return -1;
 	}
+	int rc = 0;
 
-	fscanf(file,
-	       "cpu %llu %llu %llu %llu %llu %llu %llu %llu",
-	       &prev.user,
-	       &prev.nice,
-	       &prev.system,
-	       &prev.idle,
-	       &prev.iowait,
-	       &prev.irq,
-	       &prev.softirq,
-	       &prev.steal);
+	if (0 >= (rc = fscanf(file,
+	                      "cpu %llu %llu %llu %llu %llu %llu %llu %llu",
+	                      &prev.user,
+	                      &prev.nice,
+	                      &prev.system,
+	                      &prev.idle,
+	                      &prev.iowait,
+	                      &prev.irq,
+	                      &prev.softirq,
+	                      &prev.steal)))
+	{
+		fprintf(stderr, "<%s> read file '%s' failed fscanf rc(%d), errno = %d(%s)", __func__,
+		                 PROCSTATFILE, rc, errno, strerror(errno));
+		return -1;
+	}
 
 	fclose(file);
-	/*struct timeval ts;
-	ts.tv_sec = 1000*INTERVAL;
-	nanosleep(&ts, NULL);*/
+
 	usleep(INTERVAL);
 	file = fopen(PROCSTATFILE, "r");
 	if (file == NULL) 
@@ -33,15 +37,20 @@ int CPU_info(double * val)
 		return -1;
 	}
 
-	fscanf(file, "cpu %llu %llu %llu %llu %llu %llu %llu %llu", 
-	       &this.user,
-	       &this.nice,
-	       &this.system,
-	       &this.idle,
-	       &this.iowait,
-	       &this.irq,
-	       &this.softirq,
-	       &this.steal);
+	if (0 >= (rc = fscanf(file, "cpu %llu %llu %llu %llu %llu %llu %llu %llu", 
+	                      &this.user,
+	                      &this.nice,
+	                      &this.system,
+	                      &this.idle,
+	                      &this.iowait,
+	                      &this.irq,
+	                      &this.softirq,
+	                      &this.steal)))
+	{
+		fprintf(stderr, "<%s> read file '%s' failed fscanf rc(%d), errno = %d(%s)", __func__,
+		                 PROCSTATFILE, rc, errno, strerror(errno));
+		return -1;
+	}
 
 	fclose(file);
 

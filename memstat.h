@@ -13,6 +13,7 @@
 #define PROCMEMINFOFILE PROCDIR "/meminfo"
 #endif
 #define N 8
+#define BUF_SIZE 128
 
 typedef struct
 {

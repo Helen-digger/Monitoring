@@ -9,13 +9,14 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <poll.h>
 
 #include "memstat.h"
 #include "cpustat.h"
 #include "uuid.h"
 #include "tbf.h"
 #include "id_client.h"
-#include "mac_addr.h"
+#include "get_addr.h"
 #include "time.h"
 #include "loadavg.h"
 
@@ -24,12 +25,15 @@
 
 #define SERVER_PORT         2048
 #define SRV_CAST_RL (tbf) {.rate = 1, .burst = 1}
+#define CLT_SEND_RL (tbf) {.rate = 1, .burst = 5}
 
 #define MCAST_TTL           64
 #define MCAST_ADDR          "239.0.0.1"
 #define MCAST_PORT          4092
 #define BCAST_PORT          4091
 #define SRV_LISTEN_T        3000
+#define ANS_TIMEOUT         5000
+#define MISED_ANS_COUNT_MAX 10
 
 #define CLIENT_PORT         2049
 
@@ -72,6 +76,30 @@ typedef struct
 	int                rcv_size;
 	int                ans_code;
 } sk_t;
+
+typedef struct
+{
+	sk_t          sk;
+	sk_t          sk_cast;
+	tbf           rl_cast;
+	PC_stat       buffer;
+	server_ans    ans_all;
+	struct pollfd poll_fd[1];
+	int           poll_rc;
+} srv_t;
+
+typedef struct
+{
+	sk_t          sk;
+	pid_t         pid;
+	tbf           snd_rl;
+	PC_stat       client_status;
+	server_ans    ans_me;
+	char          iface[IFNAMSIZ];
+	struct pollfd poll_fd[1];
+	int           poll_rc;
+	int           missed_ans;
+} clt_t;
 
 #define SK_INIT(_sk_, _l_ip_, _r_ip_, _lport_, _rport_)                           \
 do {                                                                              \
@@ -185,5 +213,3 @@ do {                                                                            
 	_sk_.RemoteAddr.sin_addr.s_addr = inet_addr(_ip_mcast_);                                \
 	_sk_.RemoteAddr.sin_port        = htons(MCAST_PORT);                                    \
 } while (0)
-
-int isReadable(int sock, int * error, int timeOut);

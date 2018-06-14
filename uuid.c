@@ -2,7 +2,7 @@
 
 int Uuid(char *uu)
 {
-	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
+	/*printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));*/
 	FILE* file = fopen(UUID_FILE_PATH, "r");
 
 	if (file == NULL)

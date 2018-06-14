@@ -2,8 +2,10 @@
 
 int Mem_Info(Memlist *mem_stat) 
 {
-	printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));
-	char buffer1[128];
+	/*printf("%s %s\n", __func__, (errno ? strerror(errno) : "ok"));*/
+	char buffer[BUF_SIZE];
+	memset(buffer, 0, sizeof(buffer));
+
 	FILE * file = fopen(PROCMEMINFOFILE, "r");
 	if (file == NULL)
 	{
@@ -13,21 +15,25 @@ int Mem_Info(Memlist *mem_stat)
 
 	for (int i=0; i<N; i++)
 	{
-		while (fgets(buffer1, 128, file)) 
+		while (fgets(buffer, BUF_SIZE, file)) 
 		{
-			sscanf(buffer1, "MemTotal: %32lu kB",     &mem_stat->MemTotal);
-			sscanf(buffer1, "MemFree: %32lu kB",      &mem_stat->MemFree);
-			sscanf(buffer1, "MemAvailable: %32lu kB", &mem_stat->MemAvailable);
-			sscanf(buffer1, "Buffers: %32lu kB",      &mem_stat->Buffers);
-			sscanf(buffer1, "Cached: %32lu kB",       &mem_stat->Cached);
-			sscanf(buffer1, "SwapCached: %32lu kB",   &mem_stat->SwapCached);
-			sscanf(buffer1, "Active: %32lu kB",       &mem_stat->Active);
-			sscanf(buffer1, "Inactive: %32lu kB",     &mem_stat->Inactive);
+			sscanf(buffer, "MemTotal: %32lu kB",     &mem_stat->MemTotal);
+			sscanf(buffer, "MemFree: %32lu kB",      &mem_stat->MemFree);
+			sscanf(buffer, "MemAvailable: %32lu kB", &mem_stat->MemAvailable);
+			sscanf(buffer, "Buffers: %32lu kB",      &mem_stat->Buffers);
+			sscanf(buffer, "Cached: %32lu kB",       &mem_stat->Cached);
+			sscanf(buffer, "SwapCached: %32lu kB",   &mem_stat->SwapCached);
+			sscanf(buffer, "Active: %32lu kB",       &mem_stat->Active);
+			sscanf(buffer, "Inactive: %32lu kB",     &mem_stat->Inactive);
 			break;
 		}
 	}
 
-	fclose(file);
+	if (NULL != file)
+	{
+		fclose(file);
+		file = NULL;
+	}
 
 	return 0;
 }
